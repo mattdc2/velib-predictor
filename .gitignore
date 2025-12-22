@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# Data
+data/raw/*
+data/processed/*
+data/predictions/*
+!data/*/.gitkeep
+
+# Models
+models/*
+!models/.gitkeep
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
