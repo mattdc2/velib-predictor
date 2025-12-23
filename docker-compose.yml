@@ -1,0 +1,209 @@
+services:
+  # ----------------------------------------------------------
+  # PostgreSQL + TimescaleDB
+  # ----------------------------------------------------------
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: velib_timescaledb
+    restart: unless-stopped
+    
+    environment:
+      POSTGRES_DB: ${DB_NAME:-velib}
+      POSTGRES_USER: ${DB_USER:-velib_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?error}
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+      TIMESCALEDB_TELEMETRY: "off"
+    
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01_init_schema.sql:ro
+      - ./backups:/backups
+    
+    networks:
+      - velib_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-velib_user} -d ${DB_NAME:-velib}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # ----------------------------------------------------------
+  # MLflow Tracking Server
+  # ----------------------------------------------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    container_name: velib_mlflow
+    restart: unless-stopped
+    
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${DB_USER:-velib_user}:${DB_PASSWORD}@timescaledb:5432/mlflow
+      --default-artifact-root /mlflow/artifacts
+      --serve-artifacts
+    
+    ports:
+      - "5000:5000"
+    
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    
+    networks:
+      - velib_network
+    
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    
+    environment:
+      MLFLOW_TRACKING_URI: http://0.0.0.0:5000
+
+  # ----------------------------------------------------------
+  # Data Collector (Optional - can run on host instead)
+  # ----------------------------------------------------------
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: velib_collector
+    restart: unless-stopped
+    
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-velib}
+      DB_USER: ${DB_USER:-velib_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src:ro
+      - ./logs:/app/logs
+    
+    networks:
+      - velib_network
+    
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    
+    # Run collector every 15 minutes
+    command: >
+      sh -c "
+        while true; do
+          python -m src.data.collector
+          sleep 900
+        done
+      "
+
+  # ----------------------------------------------------------
+  # Jupyter Notebook (for development/analysis)
+  # ----------------------------------------------------------
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    
+    container_name: velib_jupyter
+    restart: unless-stopped
+    
+    ports:
+      - "8888:8888"
+    
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-velib}
+      DB_USER: ${DB_USER:-velib_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      JUPYTER_ENABLE_LAB: "yes"
+    
+    volumes:
+      # Mount entire project for development
+      - .:/workspace
+      - jupyter_data:/root/.jupyter
+    
+    networks:
+      - velib_network
+    
+    depends_on:
+      - timescaledb
+      - mlflow
+    
+    command: >
+      jupyter lab
+      --ip=0.0.0.0
+      --port=8888
+      --no-browser
+      --allow-root
+      --NotebookApp.token=''
+      --NotebookApp.password=''
+
+# ----------------------------------------------------------
+# Networks
+# ----------------------------------------------------------
+networks:
+  velib_network:
+    driver: bridge
+
+# ----------------------------------------------------------
+# Volumes
+# ----------------------------------------------------------
+volumes:
+  timescale_data:
+    driver: local
+  mlflow_artifacts:
+    driver: local
+  jupyter_data:
+    driver: local
+
+
+# ============================================================
+# USAGE EXAMPLES
+# ============================================================
+# 
+# Start all services:
+#   docker-compose up -d
+#
+# Start only database:
+#   docker-compose up -d timescaledb
+#
+# View logs:
+#   docker-compose logs -f timescaledb
+#   docker-compose logs -f collector
+#
+# Stop all services:
+#   docker-compose down
+#
+# Stop and remove volumes (WARNING: deletes data):
+#   docker-compose down -v
+#
+# Restart a service:
+#   docker-compose restart collector
+#
+# Access database:
+#   docker-compose exec timescaledb psql -U velib_user -d velib
+#
+# Backup database:
+#   docker-compose exec timescaledb pg_dump -U velib_user velib > backup.sql
+#
+# Restore database:
+#   cat backup.sql | docker-compose exec -T timescaledb psql -U velib_user -d velib
+# ============================================================

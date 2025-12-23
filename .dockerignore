@@ -1,0 +1,80 @@
+# ============================================================
+# .dockerignore
+# Files to exclude from Docker build context
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Data (don't copy into images)
+data/raw/*
+data/processed/*
+data/external/*
+!data/*/.gitkeep
+
+# Models (mount or copy separately)
+models/*
+!models/.gitkeep
+mlruns/
+mlartifacts/
+
+# Logs
+logs/*.log
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD
+.github/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Environment
+.env
+.env.*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+backups/
+*.sql
+*.dump

@@ -173,3 +173,137 @@ velib-predictor/
 - Shell scripts for cron jobs and orchestration
 - `Makefile` for developer convenience
 - Clear separation between library code and executables
+
+
+
+# ============================================================
+# README section for Docker setup
+# ============================================================
+
+## Docker Setup
+
+### Quick Start
+
+```bash
+# 1. Create .env file
+cp .env.example .env
+# Edit .env with your passwords
+
+# 2. Start all services
+docker-compose up -d
+
+# 3. Check services are running
+docker-compose ps
+
+# 4. View logs
+docker-compose logs -f
+```
+
+### Services
+
+The docker-compose setup includes:
+
+1. **TimescaleDB** (localhost:5432)
+   - PostgreSQL with TimescaleDB extension
+   - Persistent data storage
+   - Automatic initialization
+
+2. **MLflow** (localhost:5000)
+   - Experiment tracking
+   - Model registry
+   - Artifact storage
+
+3. **Collector** (optional)
+   - Automatic data collection every 15 min
+   - Can be disabled to run on host
+
+4. **Jupyter** (localhost:8888)
+   - Development environment
+   - Pre-configured with project dependencies
+
+### Development Workflow
+
+```bash
+# Start development environment
+make docker-dev
+
+# Access Jupyter
+# Open http://localhost:8888 in browser
+
+# Access database
+make docker-shell
+
+# View collector logs
+docker-compose logs -f collector
+
+# Restart collector
+docker-compose restart collector
+```
+
+### Production Deployment
+
+```bash
+# Build optimized images
+docker build --target collector -t velib-collector:v1.0 .
+docker build --target inference -t velib-api:v1.0 .
+
+# Run in production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+### Backup & Restore
+
+```bash
+# Backup database
+make docker-backup
+
+# Restore database
+make docker-restore BACKUP_FILE=backups/velib_20241222_120000.sql
+```
+
+### Troubleshooting
+
+```bash
+# Check service health
+docker-compose ps
+
+# View service logs
+docker-compose logs timescaledb
+docker-compose logs collector
+
+# Restart services
+docker-compose restart
+
+# Clean restart (WARNING: deletes data)
+docker-compose down -v
+docker-compose up -d
+```
+
+### Resource Configuration
+
+Edit `docker-compose.yml` to adjust resource limits:
+
+```yaml
+services:
+  timescaledb:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'      # Adjust based on your system
+          memory: 2G
+```
+
+### Environment Variables
+
+Required in `.env`:
+
+```bash
+# Database
+DB_NAME=velib
+DB_USER=velib_user
+DB_PASSWORD=your_secure_password  # REQUIRED
+
+# Optional
+DB_PORT=5432
+LOG_LEVEL=INFO
+```
