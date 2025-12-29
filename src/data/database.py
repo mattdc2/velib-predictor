@@ -8,10 +8,10 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
 import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
-from psycopg2.extras import RealDictCursor, execute_values
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
+from psycopg2.extras import RealDictCursor, execute_values
+from psycopg2.pool import ThreadedConnectionPool
 
 # Load environment variables
 load_dotenv()
@@ -71,9 +71,7 @@ class DatabaseManager:
                 password=self.password,
                 cursor_factory=RealDictCursor,
             )
-            logger.info(
-                f"Database pool initialized: {self.database}@{self.host}:{self.port}"
-            )
+            logger.info(f"Database pool initialized: {self.database}@{self.host}:{self.port}")
         except psycopg2.Error as e:
             logger.error(f"Failed to initialize database pool: {e}")
             raise
@@ -132,9 +130,7 @@ class DatabaseManager:
             finally:
                 cursor.close()
 
-    def execute(
-        self, query: str, params: Optional[tuple] = None, commit: bool = True
-    ) -> int:
+    def execute(self, query: str, params: Optional[tuple] = None, commit: bool = True) -> int:
         """
         Execute a single query (INSERT, UPDATE, DELETE).
 
@@ -195,9 +191,7 @@ class DatabaseManager:
 
         return total_rows
 
-    def fetch_one(
-        self, query: str, params: Optional[tuple] = None
-    ) -> Optional[Dict[str, Any]]:
+    def fetch_one(self, query: str, params: Optional[tuple] = None) -> Optional[Dict[str, Any]]:
         """
         Fetch a single row from database.
 
@@ -218,9 +212,7 @@ class DatabaseManager:
             cursor.execute(query, params)
             return cursor.fetchone()
 
-    def fetch_all(
-        self, query: str, params: Optional[tuple] = None
-    ) -> List[Dict[str, Any]]:
+    def fetch_all(self, query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
         """
         Fetch all rows from database.
 

@@ -72,4 +72,4 @@ packages = ["src"]
 # Black configuration
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py310']

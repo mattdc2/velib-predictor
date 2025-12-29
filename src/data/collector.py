@@ -3,13 +3,13 @@ Data collector for Velib station information and status.
 Fetches data from Velib open data API and stores in PostgreSQL/TimescaleDB.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List
-from dataclasses import dataclass
 
 import requests
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from src.data.database import DatabaseManager
 
@@ -47,9 +47,7 @@ class StationStatus:
 class VelibAPIClient:
     """Client for interacting with Velib open data API."""
 
-    BASE_URL = (
-        "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole"
-    )
+    BASE_URL = "https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole"
     STATION_INFO_URL = f"{BASE_URL}/station_information.json"
     STATION_STATUS_URL = f"{BASE_URL}/station_status.json"
 
@@ -267,14 +265,10 @@ class VelibDataCollector:
             ]
 
             rows_inserted = self.db.execute_many(query, records)
-            logger.success(
-                f"Inserted {rows_inserted} status records at {collection_time}"
-            )
+            logger.success(f"Inserted {rows_inserted} status records at {collection_time}")
 
             # Refresh materialized view (optional, can be scheduled separately)
-            self.db.execute(
-                "REFRESH MATERIALIZED VIEW CONCURRENTLY latest_station_status"
-            )
+            self.db.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY latest_station_status")
 
             return rows_inserted
 
