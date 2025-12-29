@@ -28,9 +28,9 @@ CREATE TABLE station_information (
 );
 
 -- Spatial index for nearest neighbor queries
-CREATE INDEX idx_station_location ON station_information USING GIST (
-    ll_to_earth(lat, lon)
-);
+-- CREATE INDEX idx_station_location ON station_information USING GIST (
+--     ll_to_earth(lat, lon)
+-- );
 
 -- Standard index on location for k-NN
 CREATE INDEX idx_station_lat_lon ON station_information (lat, lon);

@@ -39,37 +39,6 @@ services:
         reservations:
           memory: 512M
 
-  # ----------------------------------------------------------
-  # MLflow Tracking Server
-  # ----------------------------------------------------------
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.9.2
-    container_name: velib_mlflow
-    restart: unless-stopped
-    
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri postgresql://${DB_USER:-velib_user}:${DB_PASSWORD}@timescaledb:5432/mlflow
-      --default-artifact-root /mlflow/artifacts
-      --serve-artifacts
-    
-    ports:
-      - "5000:5000"
-    
-    volumes:
-      - mlflow_artifacts:/mlflow/artifacts
-    
-    networks:
-      - velib_network
-    
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-    
-    environment:
-      MLFLOW_TRACKING_URI: http://0.0.0.0:5000
 
   # ----------------------------------------------------------
   # Data Collector (Optional - can run on host instead)
@@ -112,49 +81,26 @@ services:
       "
 
   # ----------------------------------------------------------
-  # Jupyter Notebook (for development/analysis)
+  # pgAdmin (Database Management)
   # ----------------------------------------------------------
-  jupyter:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    
-    container_name: velib_jupyter
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: velib_pgadmin
     restart: unless-stopped
     
-    ports:
-      - "8888:8888"
-    
     environment:
-      DB_HOST: timescaledb
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-velib}
-      DB_USER: ${DB_USER:-velib_user}
-      DB_PASSWORD: ${DB_PASSWORD}
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      JUPYTER_ENABLE_LAB: "yes"
+      PGADMIN_DEFAULT_EMAIL: admin@velib.fr
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     
-    volumes:
-      # Mount entire project for development
-      - .:/workspace
-      - jupyter_data:/root/.jupyter
+    ports:
+      - "5050:80"
     
     networks:
       - velib_network
     
     depends_on:
       - timescaledb
-      - mlflow
-    
-    command: >
-      jupyter lab
-      --ip=0.0.0.0
-      --port=8888
-      --no-browser
-      --allow-root
-      --NotebookApp.token=''
-      --NotebookApp.password=''
 
 # ----------------------------------------------------------
 # Networks
