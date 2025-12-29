@@ -3,13 +3,13 @@ Data collector for Velib station information and status.
 Fetches data from Velib open data API and stores in PostgreSQL/TimescaleDB.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List
-from dataclasses import dataclass
 
 import requests
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from src.data.database import DatabaseManager
 

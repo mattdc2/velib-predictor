@@ -8,10 +8,10 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
 import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
-from psycopg2.extras import RealDictCursor, execute_values
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
+from psycopg2.extras import RealDictCursor, execute_values
+from psycopg2.pool import ThreadedConnectionPool
 
 # Load environment variables
 load_dotenv()
