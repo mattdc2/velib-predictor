@@ -105,7 +105,66 @@ COMMENT ON COLUMN station_status.last_reported IS 'Unix timestamp from Velib API
 
 
 -- ============================================================
--- 3. PREDICTIONS (Model outputs)
+-- 3. Weather Data Table (time series data)
+-- ============================================================
+
+-- Weather data table
+CREATE TABLE weather_data (
+    time TIMESTAMPTZ NOT NULL PRIMARY KEY,
+    
+    -- Temperature (°C)
+    temperature FLOAT NOT NULL,
+    apparent_temperature FLOAT,  -- "Feels like"
+    
+    -- Precipitation
+    precipitation FLOAT NOT NULL DEFAULT 0,  -- mm
+    rain FLOAT DEFAULT 0,                    -- mm
+    snowfall FLOAT DEFAULT 0,                -- cm
+    
+    -- Wind
+    wind_speed FLOAT,      -- km/h
+    wind_direction INT,    -- degrees
+    wind_gusts FLOAT,      -- km/h
+    
+    -- Atmospheric
+    pressure FLOAT,        -- hPa
+    humidity INT,          -- %
+    cloud_cover INT,       -- %
+    
+    -- Conditions
+    weather_code INT,      -- WMO code
+    
+    -- Metadata
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Convert to TimescaleDB hypertable
+SELECT create_hypertable(
+    'weather_data',
+    'time',
+    chunk_time_interval => INTERVAL '7 days',
+    if_not_exists => TRUE
+);
+
+-- Compression policy (compress after 7 days)
+ALTER TABLE weather_data SET (
+    timescaledb.compress,
+    timescaledb.compress_orderby = 'time DESC'
+);
+
+SELECT add_compression_policy('weather_data', INTERVAL '7 days');
+
+-- Retention policy (keep for 6 months)
+SELECT add_retention_policy('weather_data', INTERVAL '6 months');
+
+-- Index for efficient queries
+CREATE INDEX idx_weather_time ON weather_data (time DESC);
+
+COMMENT ON TABLE weather_data IS 'Weather data for Paris from Open-Meteo API';
+COMMENT ON COLUMN weather_data.weather_code IS 'WMO Weather interpretation code';
+
+-- ============================================================
+-- 4. PREDICTIONS (Model outputs)
 -- ============================================================
 CREATE TABLE predictions (
     time TIMESTAMPTZ NOT NULL,
@@ -160,7 +219,7 @@ COMMENT ON COLUMN predictions.prediction_horizon_minutes IS 'How many minutes ah
 
 
 -- ============================================================
--- 4. MODEL RUNS (Training metadata)
+-- 5. MODEL RUNS (Training metadata)
 -- ============================================================
 CREATE TABLE model_runs (
     run_id SERIAL PRIMARY KEY,
@@ -201,7 +260,7 @@ COMMENT ON TABLE model_runs IS 'Metadata about model training runs';
 
 
 -- ============================================================
--- 5. MATERIALIZED VIEWS for common queries
+-- 6. MATERIALIZED VIEWS for common queries
 -- ============================================================
 
 -- Latest status for each station (for quick dashboard queries)
@@ -225,9 +284,82 @@ COMMENT ON MATERIALIZED VIEW latest_station_status IS 'Most recent status for ea
 -- Refresh policy (every 15 minutes)
 -- Note: In production, this would be triggered by your data collection job
 
+CREATE MATERIALIZED VIEW weather_hourly
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('1 hour', time) AS bucket,
+    AVG(temperature) as avg_temperature,
+    MIN(temperature) as min_temperature,
+    MAX(temperature) as max_temperature,
+    AVG(apparent_temperature) as avg_apparent_temperature,
+    SUM(precipitation) as total_precipitation,
+    SUM(rain) as total_rain,
+    SUM(snowfall) as total_snowfall,
+    AVG(wind_speed) as avg_wind_speed,
+    MAX(wind_gusts) as max_wind_gusts,
+    AVG(humidity) as avg_humidity,
+    AVG(cloud_cover) as avg_cloud_cover,
+    COUNT(*) as num_measurements
+FROM weather_data
+GROUP BY bucket
+WITH NO DATA;
+
+-- Refresh policy
+SELECT add_continuous_aggregate_policy('weather_hourly',
+    start_offset => INTERVAL '3 hours',
+    end_offset => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '1 hour');
+
 
 -- ============================================================
--- 6. CONTINUOUS AGGREGATES (TimescaleDB feature)
+-- Helper View: Weather Conditions Decoder
+-- ============================================================
+
+CREATE VIEW weather_conditions AS
+SELECT 
+    time,
+    temperature,
+    precipitation,
+    wind_speed,
+    CASE weather_code
+        WHEN 0 THEN 'Clear sky'
+        WHEN 1 THEN 'Mainly clear'
+        WHEN 2 THEN 'Partly cloudy'
+        WHEN 3 THEN 'Overcast'
+        WHEN 45 THEN 'Fog'
+        WHEN 48 THEN 'Depositing rime fog'
+        WHEN 51 THEN 'Light drizzle'
+        WHEN 53 THEN 'Moderate drizzle'
+        WHEN 55 THEN 'Dense drizzle'
+        WHEN 61 THEN 'Slight rain'
+        WHEN 63 THEN 'Moderate rain'
+        WHEN 65 THEN 'Heavy rain'
+        WHEN 71 THEN 'Slight snow'
+        WHEN 73 THEN 'Moderate snow'
+        WHEN 75 THEN 'Heavy snow'
+        WHEN 80 THEN 'Slight rain showers'
+        WHEN 81 THEN 'Moderate rain showers'
+        WHEN 82 THEN 'Violent rain showers'
+        WHEN 95 THEN 'Thunderstorm'
+        WHEN 96 THEN 'Thunderstorm with slight hail'
+        WHEN 99 THEN 'Thunderstorm with heavy hail'
+        ELSE 'Unknown'
+    END as condition_description,
+    CASE
+        WHEN weather_code IN (51, 53, 55, 61, 63, 65, 80, 81, 82) THEN TRUE
+        ELSE FALSE
+    END as is_raining,
+    CASE
+        WHEN weather_code IN (71, 73, 75) THEN TRUE
+        ELSE FALSE
+    END as is_snowing
+FROM weather_data;
+
+COMMENT ON VIEW weather_conditions IS 'Human-readable weather conditions';
+
+
+-- ============================================================
+-- 7. CONTINUOUS AGGREGATES (TimescaleDB feature)
 -- ============================================================
 
 -- Hourly aggregates for each station
@@ -257,7 +389,7 @@ COMMENT ON MATERIALIZED VIEW station_status_hourly IS 'Hourly aggregates for fas
 
 
 -- ============================================================
--- 7. HELPER FUNCTIONS
+-- 8. HELPER FUNCTIONS
 -- ============================================================
 
 -- Function to get k-nearest stations
@@ -311,7 +443,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 
 -- ============================================================
--- 8. INITIAL DATA QUALITY VIEWS
+-- 9. INITIAL DATA QUALITY VIEWS
 -- ============================================================
 
 -- View to identify stations with no recent data
@@ -342,3 +474,21 @@ GROUP BY hour
 ORDER BY hour DESC;
 
 COMMENT ON VIEW collection_stats IS 'Data collection statistics for monitoring';
+
+-- View for weather data quality
+CREATE VIEW weather_quality_check AS
+SELECT 
+    DATE(time) as date,
+    COUNT(*) as records,
+    MIN(time) as first_record,
+    MAX(time) as last_record,
+    COUNT(*) FILTER (WHERE precipitation > 0) as rainy_periods,
+    AVG(temperature) as avg_temp,
+    MIN(temperature) as min_temp,
+    MAX(temperature) as max_temp
+FROM weather_data
+WHERE time > NOW() - INTERVAL '7 days'
+GROUP BY DATE(time)
+ORDER BY date DESC;
+
+COMMENT ON VIEW weather_quality_check IS 'Daily weather collection statistics';
