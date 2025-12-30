@@ -32,6 +32,7 @@ mlartifacts/
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # Jupyter
 .ipynb_checkpoints/

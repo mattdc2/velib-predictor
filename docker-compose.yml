@@ -87,20 +87,64 @@ services:
     image: dpage/pgadmin4:latest
     container_name: velib_pgadmin
     restart: unless-stopped
-    
+
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@velib.fr
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: 'False'
-    
+
     ports:
       - "5050:80"
-    
+
     networks:
       - velib_network
-    
+
     depends_on:
       - timescaledb
+
+  # ----------------------------------------------------------
+  # Jupyter Notebook Server (Data Science & Analysis)
+  # ----------------------------------------------------------
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: velib_jupyter
+    restart: unless-stopped
+
+    environment:
+      # Database connection info
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-velib}
+      DB_USER: ${DB_USER:-velib_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Jupyter configuration
+      JUPYTER_ENABLE_LAB: "yes"
+      GRANT_SUDO: "yes"
+
+    ports:
+      - "8888:8888"
+
+    volumes:
+      # Persistent storage for notebooks
+      - jupyter_data:/home/jovyan/work
+      # Mount project source code as read-only
+      - ./src:/home/jovyan/src:ro
+      # Mount notebooks directory (create if needed)
+      - ./notebooks:/home/jovyan/notebooks
+
+    networks:
+      - velib_network
+
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+    user: root
+
+    command: >
+      start-notebook.sh
+      --NotebookApp.token=''
+      --NotebookApp.password=''
 
 # ----------------------------------------------------------
 # Networks

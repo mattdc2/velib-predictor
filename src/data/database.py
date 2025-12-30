@@ -7,11 +7,11 @@ import os
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-import psycopg2
+import psycopg
 from dotenv import load_dotenv
 from loguru import logger
-from psycopg2.extras import RealDictCursor, execute_values
-from psycopg2.pool import ThreadedConnectionPool
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 # Load environment variables
 load_dotenv()
@@ -61,18 +61,18 @@ class DatabaseManager:
     def _initialize_pool(self):
         """Initialize the connection pool."""
         try:
-            self.pool = ThreadedConnectionPool(
-                self.min_conn,
-                self.max_conn,
-                host=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.user,
-                password=self.password,
-                cursor_factory=RealDictCursor,
+            conninfo = (
+                f"host={self.host} port={self.port} dbname={self.database} "
+                f"user={self.user} password={self.password}"
+            )
+            self.pool = ConnectionPool(
+                conninfo,
+                min_size=self.min_conn,
+                max_size=self.max_conn,
+                kwargs={"row_factory": dict_row},
             )
             logger.info(f"Database pool initialized: {self.database}@{self.host}:{self.port}")
-        except psycopg2.Error as e:
+        except psycopg.Error as e:
             logger.error(f"Failed to initialize database pool: {e}")
             raise
 
@@ -93,7 +93,7 @@ class DatabaseManager:
         try:
             conn = self.pool.getconn()
             yield conn
-        except psycopg2.Error as e:
+        except psycopg.Error as e:
             if conn:
                 conn.rollback()
             logger.error(f"Database error: {e}")
@@ -123,7 +123,7 @@ class DatabaseManager:
                 yield cursor
                 if commit:
                     conn.commit()
-            except psycopg2.Error as e:
+            except psycopg.Error as e:
                 conn.rollback()
                 logger.error(f"Cursor operation failed: {e}")
                 raise
@@ -230,17 +230,14 @@ class DatabaseManager:
             cursor.execute(query, params)
             return cursor.fetchall()
 
-    def bulk_insert(
-        self, table: str, columns: List[str], values: List[tuple], page_size: int = 1000
-    ) -> int:
+    def bulk_insert(self, table: str, columns: List[str], values: List[tuple]) -> int:
         """
-        Fast bulk insert using execute_values.
+        Fast bulk insert using COPY.
 
         Args:
             table: Table name
             columns: List of column names
             values: List of value tuples
-            page_size: Number of records per batch
 
         Returns:
             Number of rows inserted
@@ -256,14 +253,16 @@ class DatabaseManager:
             return 0
 
         columns_str = ", ".join(columns)
-        query = f"INSERT INTO {table} ({columns_str}) VALUES %s"
-
         total_rows = 0
-        with self.get_cursor(commit=True) as cursor:
-            for i in range(0, len(values), page_size):
-                batch = values[i : i + page_size]
-                execute_values(cursor, query, batch, page_size=page_size)
-                total_rows += cursor.rowcount
+
+        with self.get_connection() as conn:
+            with conn.cursor() as cursor:
+                # Use COPY for efficient bulk insert
+                with cursor.copy(f"COPY {table} ({columns_str}) FROM STDIN") as copy:
+                    for row in values:
+                        copy.write_row(row)
+                total_rows = len(values)
+                conn.commit()
 
         return total_rows
 
