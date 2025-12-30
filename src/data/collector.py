@@ -3,13 +3,13 @@ Data collector for Velib station information and status.
 Fetches data from Velib open data API and stores in PostgreSQL/TimescaleDB.
 """
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List
 
 import requests
 from dotenv import load_dotenv
 from loguru import logger
+from pydantic import BaseModel
 
 from src.data.database import DatabaseManager
 
@@ -17,8 +17,7 @@ from src.data.database import DatabaseManager
 load_dotenv()
 
 
-@dataclass
-class StationInfo:
+class StationInfo(BaseModel):
     """Station information data model."""
 
     station_id: int
@@ -29,8 +28,7 @@ class StationInfo:
     capacity: int
 
 
-@dataclass
-class StationStatus:
+class StationStatus(BaseModel):
     """Station status data model."""
 
     station_id: int
@@ -196,17 +194,7 @@ class VelibDataCollector:
                     updated_at = CURRENT_TIMESTAMP
             """
 
-            records = [
-                {
-                    "station_id": s.station_id,
-                    "station_code": s.station_code,
-                    "name": s.name,
-                    "lat": s.lat,
-                    "lon": s.lon,
-                    "capacity": s.capacity,
-                }
-                for s in stations
-            ]
+            records = [s.model_dump() for s in stations]
 
             self.db.execute_many(query, records)
             logger.success(f"Updated {len(stations)} stations in database")
@@ -248,21 +236,7 @@ class VelibDataCollector:
                 ON CONFLICT (time, station_id) DO NOTHING
             """
 
-            records = [
-                {
-                    "time": collection_time,
-                    "station_id": s.station_id,
-                    "num_bikes_available": s.num_bikes_available,
-                    "num_mechanical": s.num_mechanical,
-                    "num_ebike": s.num_ebike,
-                    "num_docks_available": s.num_docks_available,
-                    "is_installed": s.is_installed,
-                    "is_returning": s.is_returning,
-                    "is_renting": s.is_renting,
-                    "last_reported": s.last_reported,
-                }
-                for s in statuses
-            ]
+            records = [{"time": collection_time, **s.model_dump()} for s in statuses]
 
             rows_inserted = self.db.execute_many(query, records)
             logger.success(f"Inserted {rows_inserted} status records at {collection_time}")
@@ -300,21 +274,38 @@ class VelibDataCollector:
 
 def main():
     """Main entry point for data collection."""
+    from src.data.weather_collector import OpenMeteoClient, WeatherCollector
+
     # Initialize components
     db_manager = DatabaseManager()
-    api_client = VelibAPIClient()
-    collector = VelibDataCollector(db_manager, api_client)
+
+    # Velib collector
+    velib_api = VelibAPIClient()
+    velib_collector = VelibDataCollector(db_manager, velib_api)
+
+    # Weather collector
+    weather_api = OpenMeteoClient()
+    weather_collector = WeatherCollector(db_manager, weather_api)
 
     try:
-        # Update station information (run less frequently)
-        collector.update_station_information()
+        # 1. Update station information (first run only)
+        # Uncomment for first run or to refresh station info
+        # velib_collector.update_station_information()
 
-        # Collect current status (run every 15 minutes)
-        collector.collect_station_status()
+        # 2. Collect weather data
+        logger.info("=== Collecting Weather ===")
+        weather_collector.collect_current_weather()
 
-        # Print statistics
-        stats = collector.get_collection_stats()
-        logger.info(f"Collection stats: {stats}")
+        # 3. Collect station status
+        logger.info("=== Collecting Velib Status ===")
+        velib_collector.collect_station_status()
+
+        # 4. Print statistics
+        velib_stats = velib_collector.get_collection_stats()
+        weather_stats = weather_collector.get_weather_stats()
+
+        logger.info(f"Velib stats: {velib_stats}")
+        logger.info(f"Weather stats: {weather_stats}")
 
     except Exception as e:
         logger.error(f"Data collection failed: {e}")
