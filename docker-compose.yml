@@ -16,7 +16,7 @@ services:
     
     ports:
       - "${DB_PORT:-5432}:5432"
-    
+
     volumes:
       - timescale_data:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01_init_schema.sql:ro
@@ -39,9 +39,8 @@ services:
         reservations:
           memory: 512M
 
-
   # ----------------------------------------------------------
-  # Data Collector (Optional - can run on host instead)
+  # Data Collector
   # ----------------------------------------------------------
   collector:
     build:
@@ -60,7 +59,6 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     
     volumes:
-      # Mount source code for development
       - ./src:/app/src:ro
       - ./logs:/app/logs
     
@@ -71,7 +69,6 @@ services:
       timescaledb:
         condition: service_healthy
     
-    # Run collector every 15 minutes
     command: >
       sh -c "
         while true; do
@@ -81,7 +78,7 @@ services:
       "
 
   # ----------------------------------------------------------
-  # pgAdmin (Database Management)
+  # pgAdmin (Database Management UI)
   # ----------------------------------------------------------
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -102,50 +99,6 @@ services:
     depends_on:
       - timescaledb
 
-  # ----------------------------------------------------------
-  # Jupyter Notebook Server (Data Science & Analysis)
-  # ----------------------------------------------------------
-  jupyter:
-    image: jupyter/datascience-notebook:latest
-    container_name: velib_jupyter
-    restart: unless-stopped
-
-    environment:
-      # Database connection info
-      DB_HOST: timescaledb
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-velib}
-      DB_USER: ${DB_USER:-velib_user}
-      DB_PASSWORD: ${DB_PASSWORD}
-      # Jupyter configuration
-      JUPYTER_ENABLE_LAB: "yes"
-      GRANT_SUDO: "yes"
-
-    ports:
-      - "8888:8888"
-
-    volumes:
-      # Persistent storage for notebooks
-      - jupyter_data:/home/jovyan/work
-      # Mount project source code as read-only
-      - ./src:/home/jovyan/src:ro
-      # Mount notebooks directory (create if needed)
-      - ./notebooks:/home/jovyan/notebooks
-
-    networks:
-      - velib_network
-
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-
-    user: root
-
-    command: >
-      start-notebook.sh
-      --NotebookApp.token=''
-      --NotebookApp.password=''
-
 # ----------------------------------------------------------
 # Networks
 # ----------------------------------------------------------
@@ -159,41 +112,3 @@ networks:
 volumes:
   timescale_data:
     driver: local
-  mlflow_artifacts:
-    driver: local
-  jupyter_data:
-    driver: local
-
-
-# ============================================================
-# USAGE EXAMPLES
-# ============================================================
-# 
-# Start all services:
-#   docker-compose up -d
-#
-# Start only database:
-#   docker-compose up -d timescaledb
-#
-# View logs:
-#   docker-compose logs -f timescaledb
-#   docker-compose logs -f collector
-#
-# Stop all services:
-#   docker-compose down
-#
-# Stop and remove volumes (WARNING: deletes data):
-#   docker-compose down -v
-#
-# Restart a service:
-#   docker-compose restart collector
-#
-# Access database:
-#   docker-compose exec timescaledb psql -U velib_user -d velib
-#
-# Backup database:
-#   docker-compose exec timescaledb pg_dump -U velib_user velib > backup.sql
-#
-# Restore database:
-#   cat backup.sql | docker-compose exec -T timescaledb psql -U velib_user -d velib
-# ============================================================

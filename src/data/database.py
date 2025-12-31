@@ -303,7 +303,7 @@ class DatabaseManager:
     def close(self):
         """Close all connections in the pool."""
         if self.pool:
-            self.pool.closeall()
+            self.pool.close()
             logger.info("Database pool closed")
 
 
