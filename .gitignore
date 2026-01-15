@@ -32,10 +32,12 @@ mlartifacts/
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+notebooks/*.py
 
 # OS
 .DS_Store
