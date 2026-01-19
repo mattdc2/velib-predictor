@@ -290,7 +290,7 @@ def main():
     try:
         # 1. Update station information (first run only)
         # Uncomment for first run or to refresh station info
-        # velib_collector.update_station_information()
+        velib_collector.update_station_information()
 
         # 2. Collect weather data
         logger.info("=== Collecting Weather ===")
