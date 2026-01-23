@@ -745,6 +745,18 @@ wheels = [
 ]
 
 [[package]]
+name = "holidays"
+version = "0.88"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/82/37b4eb3b97b218d6cec19ff90634067911d6ef291ef23673126ad00a7e37/holidays-0.88.tar.gz", hash = "sha256:a356e51353f245c110b2357cea24b11b95acd95ae65df4e105e480e47dfbf547", size = 828806, upload-time = "2026-01-05T21:00:10.407Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c8/45/3b41ddaa6e9cb3da05b43f0803532aefacdc2276b95b6ab7a8ba064d1472/holidays-0.88-py3-none-any.whl", hash = "sha256:ad1dbe41f091106ddb14025dc37f867aef0afa72a9ca601c3ec71d9953f94046", size = 1348348, upload-time = "2026-01-05T21:00:08.315Z" },
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -2737,6 +2749,11 @@ dev = [
     { name = "seaborn" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "holidays" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.7.0" },
@@ -2766,6 +2783,9 @@ requires-dist = [
     { name = "tqdm", specifier = ">=4.65.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "holidays", specifier = ">=0.88" }]
 
 [[package]]
 name = "waitress"
