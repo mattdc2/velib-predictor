@@ -1,6 +1,5 @@
 """Unit tests for the feature pipeline module."""
 
-import shutil
 from pathlib import Path
 
 import numpy as np
