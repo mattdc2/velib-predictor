@@ -266,9 +266,7 @@ class TestFeaturePipelineTransform:
         assert "dist_to_center_km" in result.columns
         assert "cluster_id" in result.columns
 
-    def test_transform_with_weather_adds_weather_cols(
-        self, fitted_pipeline, status_df, weather_df
-    ):
+    def test_transform_with_weather_adds_weather_cols(self, fitted_pipeline, status_df, weather_df):
         result = fitted_pipeline.transform(status_df, weather_df)
         assert "is_raining" in result.columns
         assert "temp_category" in result.columns
@@ -290,9 +288,7 @@ class TestFeaturePipelineTransform:
 
 
 class TestFeaturePipelineFitTransform:
-    def test_fit_transform_equivalent_to_fit_then_transform(
-        self, station_df, status_df
-    ):
+    def test_fit_transform_equivalent_to_fit_then_transform(self, station_df, status_df):
         p1 = FeaturePipeline(config_no_cache())
         p1.fit(station_df)
         r1 = p1.transform(status_df)
@@ -404,7 +400,10 @@ class TestHandleMissing:
         result = _handle_missing(
             df_with_nans, "none", "station_id", "time", max_missing_fraction=1.0
         )
-        assert result["num_bikes_available"].isna().sum() == df_with_nans["num_bikes_available"].isna().sum()
+        assert (
+            result["num_bikes_available"].isna().sum()
+            == df_with_nans["num_bikes_available"].isna().sum()
+        )
 
     def test_max_missing_fraction_drops_rows(self):
         df = pd.DataFrame(
@@ -422,7 +421,9 @@ class TestHandleMissing:
 
     def test_original_not_modified(self, df_with_nans):
         nans_before = df_with_nans["num_bikes_available"].isna().sum()
-        _handle_missing(df_with_nans, "forward_fill", "station_id", "time", max_missing_fraction=1.0)
+        _handle_missing(
+            df_with_nans, "forward_fill", "station_id", "time", max_missing_fraction=1.0
+        )
         assert df_with_nans["num_bikes_available"].isna().sum() == nans_before
 
 
