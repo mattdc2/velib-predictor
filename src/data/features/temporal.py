@@ -221,10 +221,13 @@ def add_time_since_last_observation(
             f"Column '{timestamp_col}' not found and the DataFrame index is not a DatetimeIndex."
         )
 
+    _one_second = pd.Timedelta(seconds=1)
     if group_col is not None:
-        result[output_col] = ts.groupby(result[group_col]).diff().dt.total_seconds()
+        # pandas-stubs incorrectly types diff() on datetime Series as datetime,
+        # not timedelta; the division is valid at runtime.
+        result[output_col] = ts.groupby(result[group_col]).diff() / _one_second  # type: ignore[operator]
     else:
-        result[output_col] = ts.diff().dt.total_seconds()
+        result[output_col] = ts.diff() / _one_second  # type: ignore[operator]
 
     logger.debug("Added time-since-last-observation feature: %s", output_col)
     return result

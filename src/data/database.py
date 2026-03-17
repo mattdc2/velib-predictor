@@ -130,7 +130,7 @@ class DatabaseManager:
             finally:
                 cursor.close()
 
-    def execute(self, query: str, params: Optional[tuple] = None, commit: bool = True) -> int:
+    def execute(self, query: str, params: Optional[tuple | dict[str, Any]] = None, commit: bool = True) -> int:
         """
         Execute a single query (INSERT, UPDATE, DELETE).
 
@@ -331,7 +331,8 @@ if __name__ == "__main__":
     try:
         # Test query
         result = db.fetch_one("SELECT version()")
-        logger.info(f"Connected to: {result['version']}")
+        if result:
+            logger.info(f"Connected to: {result['version']}")
 
         # Check if tables exist
         tables = ["station_information", "station_status"]

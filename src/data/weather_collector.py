@@ -3,8 +3,8 @@ Weather data collector using Open-Meteo API.
 Fetches current weather data for Paris and stores in database.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 import requests
 from loguru import logger
@@ -63,7 +63,7 @@ class OpenMeteoClient:
         """
         logger.info("Fetching current weather from Open-Meteo...")
 
-        params = {
+        params: dict[str, Any] = {
             "latitude": self.PARIS_LAT,
             "longitude": self.PARIS_LON,
             "current": [
@@ -138,7 +138,7 @@ class OpenMeteoClient:
         """
         logger.info(f"Fetching historical weather from {start_date} to {end_date}...")
 
-        params = {
+        params: dict[str, Any] = {
             "latitude": self.PARIS_LAT,
             "longitude": self.PARIS_LON,
             "start_date": start_date.strftime("%Y-%m-%d"),
@@ -266,7 +266,7 @@ class WeatherCollector:
             raise
 
     def backfill_historical_weather(
-        self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
+        self, start_date: Optional[date] = None, end_date: Optional[date] = None
     ) -> int:
         """
         Backfill historical weather data.

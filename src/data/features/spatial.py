@@ -74,7 +74,7 @@ def compute_distance_matrix(
     lons = df[lon_col].to_numpy()
     # Broadcast to (n, n)
     dist = haversine_km(lats[:, None], lons[:, None], lats[None, :], lons[None, :])
-    return dist
+    return np.asarray(dist)
 
 
 def _kmeans_numpy(
