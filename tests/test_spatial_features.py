@@ -29,14 +29,32 @@ def paris_stations() -> pd.DataFrame:
         {
             "station_id": list(range(1, 13)),
             "lat": [
-                48.8566, 48.8606, 48.8650, 48.8530, 48.8490,
-                48.8720, 48.8460, 48.8800, 48.8400, 48.8700,
-                48.8350, 48.8850,
+                48.8566,
+                48.8606,
+                48.8650,
+                48.8530,
+                48.8490,
+                48.8720,
+                48.8460,
+                48.8800,
+                48.8400,
+                48.8700,
+                48.8350,
+                48.8850,
             ],
             "lon": [
-                2.3522, 2.3477, 2.3400, 2.3600, 2.3700,
-                2.3300, 2.3800, 2.3200, 2.3900, 2.3100,
-                2.4000, 2.3000,
+                2.3522,
+                2.3477,
+                2.3400,
+                2.3600,
+                2.3700,
+                2.3300,
+                2.3800,
+                2.3200,
+                2.3900,
+                2.3100,
+                2.4000,
+                2.3000,
             ],
             "capacity": [20, 25, 30, 15, 20, 25, 20, 30, 15, 25, 20, 30],
             "bikes_available": [10, 12, 20, 5, 8, 15, 10, 25, 7, 18, 9, 22],
@@ -144,7 +162,8 @@ class TestAddDistanceToCentre:
     def test_two_points_north_south(self, two_points):
         # ~1 degree latitude difference ≈ ~1 km
         result = add_distance_to_center(
-            two_points, center_lat=two_points["lat"].iloc[0],
+            two_points,
+            center_lat=two_points["lat"].iloc[0],
             center_lon=two_points["lon"].iloc[0],
         )
         assert result["dist_to_center_km"].iloc[0] == pytest.approx(0.0, abs=1e-6)
@@ -292,9 +311,7 @@ class TestAddNeighborhoodAverages:
 
     def test_missing_feature_col_raises(self, paris_stations):
         with pytest.raises(ValueError, match="nonexistent"):
-            add_neighborhood_averages(
-                paris_stations, feature_cols=["nonexistent"]
-            )
+            add_neighborhood_averages(paris_stations, feature_cols=["nonexistent"])
 
     def test_original_df_not_modified(self, paris_stations):
         original_cols = list(paris_stations.columns)
@@ -317,8 +334,10 @@ class TestAddNeighborhoodAverages:
 class TestAddAllSpatialFeatures:
     EXPECTED_COLS = [
         "dist_to_center_km",
-        "knn_5_ids", "knn_5_mean_dist",
-        "knn_10_ids", "knn_10_mean_dist",
+        "knn_5_ids",
+        "knn_5_mean_dist",
+        "knn_10_ids",
+        "knn_10_mean_dist",
         "cluster_id",
     ]
 

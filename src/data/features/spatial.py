@@ -104,8 +104,8 @@ def _kmeans_numpy(
 
     for _ in range(max_iter):
         # Assignment step: squared Euclidean distance to each centre
-        diffs = X[:, None, :] - centres[None, :, :]   # (n, k, d)
-        sq_dists = (diffs ** 2).sum(axis=2)            # (n, k)
+        diffs = X[:, None, :] - centres[None, :, :]  # (n, k, d)
+        sq_dists = (diffs**2).sum(axis=2)  # (n, k)
         new_labels = sq_dists.argmin(axis=1)
 
         if np.array_equal(new_labels, labels):
@@ -192,7 +192,7 @@ def add_knn_features(
         if k >= n:
             raise ValueError(f"k={k} must be less than the number of stations ({n}).")
 
-    dist_matrix = compute_distance_matrix(df, lat_col, lon_col)   # (n, n)
+    dist_matrix = compute_distance_matrix(df, lat_col, lon_col)  # (n, n)
     station_ids = df[id_col].to_numpy()
     result = df.copy()
 
@@ -202,9 +202,9 @@ def add_knn_features(
 
         for i in range(n):
             row = dist_matrix[i].copy()
-            row[i] = np.inf                          # exclude self
-            nn_idx = np.argpartition(row, k)[:k]     # unsorted k nearest
-            nn_idx = nn_idx[np.argsort(row[nn_idx])] # sort by distance
+            row[i] = np.inf  # exclude self
+            nn_idx = np.argpartition(row, k)[:k]  # unsorted k nearest
+            nn_idx = nn_idx[np.argsort(row[nn_idx])]  # sort by distance
             neighbor_ids.append(station_ids[nn_idx].tolist())
             mean_dists.append(float(row[nn_idx].mean()))
 
@@ -244,9 +244,7 @@ def add_cluster_labels(
     """
     n = len(df)
     if n_clusters > n:
-        raise ValueError(
-            f"n_clusters={n_clusters} cannot exceed the number of stations ({n})."
-        )
+        raise ValueError(f"n_clusters={n_clusters} cannot exceed the number of stations ({n}).")
 
     X = df[[lat_col, lon_col]].to_numpy(dtype=float)
     # Normalise so lat and lon contribute equally in Euclidean space
@@ -297,8 +295,8 @@ def add_neighborhood_averages(
     if missing:
         raise ValueError(f"Columns not found in df: {missing}")
 
-    dist_matrix = compute_distance_matrix(df, lat_col, lon_col)   # (n, n)
-    feature_matrix = df[feature_cols].to_numpy(dtype=float)        # (n, F)
+    dist_matrix = compute_distance_matrix(df, lat_col, lon_col)  # (n, n)
+    feature_matrix = df[feature_cols].to_numpy(dtype=float)  # (n, F)
     result = df.copy()
 
     nb_means = np.empty((n, len(feature_cols)), dtype=float)
@@ -312,9 +310,7 @@ def add_neighborhood_averages(
     for j, col in enumerate(feature_cols):
         result[f"{col}_nb_mean"] = nb_means[:, j]
 
-    logger.debug(
-        "Added neighbourhood averages (k=%d) for columns: %s", k, feature_cols
-    )
+    logger.debug("Added neighbourhood averages (k=%d) for columns: %s", k, feature_cols)
     return result
 
 
@@ -357,13 +353,20 @@ def add_all_spatial_features(
     result = add_distance_to_center(df, lat_col, lon_col, center_lat, center_lon)
     result = add_knn_features(result, ks=ks, lat_col=lat_col, lon_col=lon_col, id_col=id_col)
     result = add_cluster_labels(
-        result, n_clusters=n_clusters, lat_col=lat_col, lon_col=lon_col,
+        result,
+        n_clusters=n_clusters,
+        lat_col=lat_col,
+        lon_col=lon_col,
         random_state=random_state,
     )
     if feature_cols:
         result = add_neighborhood_averages(
-            result, feature_cols=feature_cols, k=min(ks), lat_col=lat_col,
-            lon_col=lon_col, id_col=id_col,
+            result,
+            feature_cols=feature_cols,
+            k=min(ks),
+            lat_col=lat_col,
+            lon_col=lon_col,
+            id_col=id_col,
         )
     logger.info("All spatial features added successfully")
     return result
