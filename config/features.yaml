@@ -1,0 +1,55 @@
+# Feature pipeline configuration for Velib demand forecasting.
+# All values here are the defaults used when loading via PipelineConfig.from_yaml().
+
+temporal:
+  # Column names matching the station_status schema
+  timestamp_col: time
+  station_col: station_id
+  # ISO 3166-1 alpha-2 country code for public holiday detection
+  country: FR
+
+spatial:
+  lat_col: lat
+  lon_col: lon
+  id_col: station_id
+  # Neighbourhood sizes for KNN features
+  ks: [5, 10]
+  # Number of geographic clusters (k-means on lat/lon)
+  n_clusters: 8
+
+lagged:
+  value_col: num_bikes_available
+  # Lag steps (N most-recent prior observations per station)
+  lags: [1, 2, 3, 4]
+  # Time-based rolling-mean windows
+  windows: ["1h", "2h", "6h", "24h"]
+  docks_col: num_docks_available
+
+weather:
+  timestamp_col: time
+  # Columns to lag (1 h and 2 h back in time)
+  lag_cols:
+    - temperature
+    - apparent_temperature
+    - precipitation
+    - rain
+    - wind_speed
+  lags_hours: [1, 2]
+  # Precipitation threshold (mm/h) for the is_raining flag
+  rain_threshold: 0.1
+  # Maximum deviation (minutes) from the exact lag time still considered valid
+  merge_tolerance_minutes: 30
+
+pipeline:
+  # Column to use as the supervised learning target
+  target_col: num_bikes_available
+  # How to handle missing values before creating the training dataset
+  # Options: forward_fill | drop | none
+  missing_value_strategy: forward_fill
+  # Rows where more than this fraction of numeric features are NaN are dropped
+  max_missing_fraction: 0.3
+  # Drop knn_N_ids columns (list-valued, not directly usable by most ML models)
+  drop_knn_id_cols: true
+  # Disk cache settings
+  cache_enabled: true
+  cache_dir: .feature_cache
