@@ -130,7 +130,9 @@ class DatabaseManager:
             finally:
                 cursor.close()
 
-    def execute(self, query: str, params: Optional[tuple | dict[str, Any]] = None, commit: bool = True) -> int:
+    def execute(
+        self, query: str, params: Optional[tuple | dict[str, Any]] = None, commit: bool = True
+    ) -> int:
         """
         Execute a single query (INSERT, UPDATE, DELETE).
 

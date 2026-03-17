@@ -4,12 +4,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.data.features.temporal import (EVENING_RUSH_END, EVENING_RUSH_START,
-                                        MORNING_RUSH_END, MORNING_RUSH_START,
-                                        add_all_temporal_features,
-                                        add_day_features, add_hour_features,
-                                        add_rush_hour_features,
-                                        add_time_since_last_observation)
+from src.data.features.temporal import (
+    EVENING_RUSH_END,
+    EVENING_RUSH_START,
+    MORNING_RUSH_END,
+    MORNING_RUSH_START,
+    add_all_temporal_features,
+    add_day_features,
+    add_hour_features,
+    add_rush_hour_features,
+    add_time_since_last_observation,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures

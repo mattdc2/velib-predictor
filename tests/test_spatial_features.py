@@ -4,13 +4,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.data.features.spatial import (PARIS_LAT, PARIS_LON,
-                                       add_all_spatial_features,
-                                       add_cluster_labels,
-                                       add_distance_to_center,
-                                       add_knn_features,
-                                       add_neighborhood_averages,
-                                       compute_distance_matrix, haversine_km)
+from src.data.features.spatial import (
+    PARIS_LAT,
+    PARIS_LON,
+    add_all_spatial_features,
+    add_cluster_labels,
+    add_distance_to_center,
+    add_knn_features,
+    add_neighborhood_averages,
+    compute_distance_matrix,
+    haversine_km,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
