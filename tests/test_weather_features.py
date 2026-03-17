@@ -8,7 +8,6 @@ from src.data.features.weather import (
     COMFORT_RAIN_COEFF,
     COMFORT_WIND_COEFF,
     COMFORT_WIND_FREE_KMH,
-    RAIN_THRESHOLD_MM,
     TEMP_LABELS,
     add_all_weather_features,
     add_comfort_index,
