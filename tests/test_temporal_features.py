@@ -16,7 +16,6 @@ from src.data.features.temporal import (
     add_time_since_last_observation,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -69,8 +68,8 @@ class TestAddHourFeatures:
 
     def test_hour_values(self, sample_df):
         result = add_hour_features(sample_df)
-        assert result["hour"].iloc[0] == 0   # midnight
-        assert result["hour"].iloc[1] == 7   # 07:30
+        assert result["hour"].iloc[0] == 0  # midnight
+        assert result["hour"].iloc[1] == 7  # 07:30
 
     def test_cyclical_at_midnight(self, sample_df):
         result = add_hour_features(sample_df)
@@ -252,18 +251,14 @@ class TestAddTimeSinceLastObservation:
         assert result["seconds_since_last_obs"].iloc[2] == pytest.approx(600.0)
 
     def test_grouped_first_rows_are_nan(self, multi_station_df):
-        df_sorted = multi_station_df.sort_values(["station_id", "timestamp"]).reset_index(
-            drop=True
-        )
+        df_sorted = multi_station_df.sort_values(["station_id", "timestamp"]).reset_index(drop=True)
         result = add_time_since_last_observation(df_sorted, group_col="station_id")
         for station in ["A", "B"]:
             first_idx = result[result["station_id"] == station].index[0]
             assert pd.isna(result.loc[first_idx, "seconds_since_last_obs"])
 
     def test_grouped_delta_values(self, multi_station_df):
-        df_sorted = multi_station_df.sort_values(["station_id", "timestamp"]).reset_index(
-            drop=True
-        )
+        df_sorted = multi_station_df.sort_values(["station_id", "timestamp"]).reset_index(drop=True)
         result = add_time_since_last_observation(df_sorted, group_col="station_id")
         station_a = result[result["station_id"] == "A"].reset_index(drop=True)
         assert station_a["seconds_since_last_obs"].iloc[1] == pytest.approx(300.0)  # 5 min

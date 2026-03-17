@@ -145,9 +145,7 @@ def add_day_features(
     return result
 
 
-def add_rush_hour_features(
-    df: pd.DataFrame, timestamp_col: str = "timestamp"
-) -> pd.DataFrame:
+def add_rush_hour_features(df: pd.DataFrame, timestamp_col: str = "timestamp") -> pd.DataFrame:
     """Add rush hour indicator features for Paris commute patterns.
 
     Rush hour windows (inclusive):
@@ -173,15 +171,13 @@ def add_rush_hour_features(
     result = df.copy()
 
     hour = dt.hour
-    result["is_morning_rush"] = (
-        (hour >= MORNING_RUSH_START) & (hour <= MORNING_RUSH_END)
-    ).astype(int)
-    result["is_evening_rush"] = (
-        (hour >= EVENING_RUSH_START) & (hour <= EVENING_RUSH_END)
-    ).astype(int)
-    result["is_rush_hour"] = (
-        result["is_morning_rush"] | result["is_evening_rush"]
-    ).astype(int)
+    result["is_morning_rush"] = ((hour >= MORNING_RUSH_START) & (hour <= MORNING_RUSH_END)).astype(
+        int
+    )
+    result["is_evening_rush"] = ((hour >= EVENING_RUSH_START) & (hour <= EVENING_RUSH_END)).astype(
+        int
+    )
+    result["is_rush_hour"] = (result["is_morning_rush"] | result["is_evening_rush"]).astype(int)
 
     logger.debug("Added rush hour features: is_morning_rush, is_evening_rush, is_rush_hour")
     return result
@@ -225,10 +221,13 @@ def add_time_since_last_observation(
             f"Column '{timestamp_col}' not found and the DataFrame index is not a DatetimeIndex."
         )
 
+    _one_second = pd.Timedelta(seconds=1)
     if group_col is not None:
-        result[output_col] = ts.groupby(result[group_col]).diff().dt.total_seconds()
+        # pandas-stubs incorrectly types diff() on datetime Series as datetime,
+        # not timedelta; the division is valid at runtime.
+        result[output_col] = ts.groupby(result[group_col]).diff() / _one_second  # type: ignore[operator]
     else:
-        result[output_col] = ts.diff().dt.total_seconds()
+        result[output_col] = ts.diff() / _one_second  # type: ignore[operator]
 
     logger.debug("Added time-since-last-observation feature: %s", output_col)
     return result
