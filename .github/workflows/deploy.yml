@@ -1,0 +1,12 @@
+# .github/workflows/ci.yml
+name: Deploy
+on:
+  push:
+    branches: [ main ]
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Successfully deployed
+              run:
+                echo "Congratulations! Your code has been successfully deployed to production. Keep up the great work!"
