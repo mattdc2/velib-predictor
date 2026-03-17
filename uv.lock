@@ -2752,6 +2752,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "scikit-learn" },
     { name = "sqlalchemy" },
     { name = "tqdm" },
 ]
@@ -2805,6 +2806,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
+    { name = "scikit-learn", specifier = ">=1.3.0" },
     { name = "seaborn", marker = "extra == 'dev'", specifier = ">=0.12.0" },
     { name = "sqlalchemy", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.65.0" },
