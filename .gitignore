@@ -33,6 +33,7 @@ mlartifacts/
 .idea/
 *.swp
 .claude/
+CLAUDE.md
 
 # Jupyter
 .ipynb_checkpoints/
