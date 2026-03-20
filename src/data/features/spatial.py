@@ -154,7 +154,7 @@ def add_distance_to_center(
         center_lat,
         center_lon,
     )
-    logger.debug("Added distance-to-centre feature: %s", output_col)
+    logger.debug(f"Added distance-to-centre feature: {output_col}")
     return result
 
 
@@ -210,7 +210,7 @@ def add_knn_features(
 
         result[f"knn_{k}_ids"] = neighbor_ids
         result[f"knn_{k}_mean_dist"] = mean_dists
-        logger.debug("Added KNN features for k=%d", k)
+        logger.debug(f"Added KNN features for k={k}")
 
     return result
 
@@ -254,7 +254,7 @@ def add_cluster_labels(
 
     result = df.copy()
     result[output_col] = labels
-    logger.debug("Added cluster labels: %d clusters, column '%s'", n_clusters, output_col)
+    logger.debug(f"Added cluster labels: {n_clusters} clusters, column '{output_col}'")
     return result
 
 
@@ -310,7 +310,7 @@ def add_neighborhood_averages(
     for j, col in enumerate(feature_cols):
         result[f"{col}_nb_mean"] = nb_means[:, j]
 
-    logger.debug("Added neighbourhood averages (k=%d) for columns: %s", k, feature_cols)
+    logger.debug(f"Added neighbourhood averages (k={k}) for columns: {feature_cols}")
     return result
 
 

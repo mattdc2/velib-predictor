@@ -68,7 +68,7 @@ def add_lag_features(
 
     for lag in lags:
         result[f"{value_col}_lag_{lag}"] = result.groupby(station_col)[value_col].shift(lag)
-        logger.debug("Added lag feature: %s_lag_%d", value_col, lag)
+        logger.debug(f"Added lag feature: {value_col}_lag_{lag}")
 
     return result.sort_index()
 
@@ -130,7 +130,7 @@ def add_rolling_means(
         )
         # means is aligned with result (both sorted by station + timestamp)
         result[col_name] = means.values
-        logger.debug("Added rolling mean feature: %s", col_name)
+        logger.debug(f"Added rolling mean feature: {col_name}")
 
     return result.sort_index()
 
@@ -191,7 +191,7 @@ def add_capacity_gap(
     # Guard against zero-capacity stations to avoid division by zero
     result[fill_rate_col] = result[value_col].astype(float) / capacity.replace(0, np.nan)
 
-    logger.debug("Added capacity gap features: %s, %s", gap_col, fill_rate_col)
+    logger.debug(f"Added capacity gap features: {gap_col}, {fill_rate_col}")
     return result
 
 
@@ -247,7 +247,7 @@ def add_rate_of_change(
     prev = grouped.shift(1)
     result[_pct_col] = result[_diff_col] / prev.abs().replace(0, np.nan)
 
-    logger.debug("Added rate-of-change features: %s, %s", _diff_col, _pct_col)
+    logger.debug(f"Added rate-of-change features: {_diff_col}, {_pct_col}")
     return result.sort_index()
 
 

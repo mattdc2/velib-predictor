@@ -46,3 +46,6 @@ notebooks/*.py
 # Coverage
 .coverage
 coverage.xml
+
+# Plots
+plots/
