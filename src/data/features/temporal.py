@@ -229,7 +229,7 @@ def add_time_since_last_observation(
     else:
         result[output_col] = ts.diff() / _one_second  # type: ignore[operator]
 
-    logger.debug("Added time-since-last-observation feature: %s", output_col)
+    logger.debug(f"Added time-since-last-observation feature: {output_col}")
     return result
 
 

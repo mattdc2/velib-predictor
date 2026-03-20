@@ -82,7 +82,7 @@ def compute_metrics(
     rmse = float(math.sqrt(np.mean(err**2)))
     mape = float(np.mean(np.abs(err) / np.maximum(np.abs(yt), mape_eps)) * 100)
 
-    logger.debug("Metrics — MAE: %.3f  RMSE: %.3f  MAPE: %.2f%%", mae, rmse, mape)
+    logger.debug(f"Metrics — MAE: {mae:.3f}  RMSE: {rmse:.3f}  MAPE: {mape:.2f}%")
     return {"mae": mae, "rmse": rmse, "mape": mape}
 
 
@@ -136,11 +136,7 @@ class PersistenceModel(VelibBaseModel):
             .last()
         )
         self._last_known = dict(zip(last.index.astype(object), last.values.astype(float)))
-        logger.info(
-            "PersistenceModel fitted on %d rows, %d stations.",
-            len(df),
-            len(self._last_known),
-        )
+        logger.info(f"PersistenceModel fitted on {len(df)} rows, {len(self._last_known)} stations.")
         return self
 
     # ------------------------------------------------------------------
@@ -164,7 +160,7 @@ class PersistenceModel(VelibBaseModel):
 
         if lag_col in df.columns:
             predictions = df[lag_col].rename("prediction")
-            logger.debug("PersistenceModel: using pre-computed %s column.", lag_col)
+            logger.debug(f"PersistenceModel: using pre-computed {lag_col} column.")
             return predictions
 
         # Derive lag on the fly
@@ -242,9 +238,7 @@ class HistoricalAverageModel(VelibBaseModel):
         self._global_mean = float(df[self.value_col].mean())
 
         logger.info(
-            "HistoricalAverageModel fitted — %d lookup entries, global mean %.2f.",
-            len(self._lookup),
-            self._global_mean,
+            f"HistoricalAverageModel fitted — {len(self._lookup)} lookup entries, global mean {self._global_mean:.2f}."
         )
         return self
 

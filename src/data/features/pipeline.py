@@ -221,12 +221,12 @@ def _handle_missing(
             result = result.sort_values([station_col, timestamp_col])
             result[numeric_cols] = result.groupby(station_col)[numeric_cols].ffill()
             result = result.sort_index()
-        logger.debug("Applied forward-fill to %d numeric columns", len(numeric_cols))
+        logger.debug(f"Applied forward-fill to {len(numeric_cols)} numeric columns")
 
     elif strategy == "drop":
         n_before = len(result)
         result = result.dropna()
-        logger.debug("Dropped %d rows with any NaN value", n_before - len(result))
+        logger.debug(f"Dropped {n_before - len(result)} rows with any NaN value")
 
     # Row-level missing fraction filter
     if max_missing_fraction < 1.0:
@@ -238,9 +238,7 @@ def _handle_missing(
             n_dropped = n_before - len(result)
             if n_dropped:
                 logger.warning(
-                    "Dropped %d rows with > %.0f%% missing features",
-                    n_dropped,
-                    max_missing_fraction * 100,
+                    f"Dropped {n_dropped} rows with > {max_missing_fraction * 100:.0f}% missing features"
                 )
 
     return result
@@ -284,10 +282,10 @@ class FeaturePipeline:
         if path.exists():
             try:
                 df = pd.read_parquet(path)
-                logger.debug("Cache hit: %s", path.name)
+                logger.debug(f"Cache hit: {path.name}")
                 return df
             except Exception as exc:
-                logger.warning("Cache read failed (%s): %s", path.name, exc)
+                logger.warning(f"Cache read failed ({path.name}): {exc}")
         return None
 
     def _save_cache(self, df: pd.DataFrame, key: str) -> None:
@@ -298,15 +296,15 @@ class FeaturePipeline:
         cacheable = df.drop(columns=list_cols)
         try:
             cacheable.to_parquet(path, index=True)
-            logger.debug("Saved cache: %s (%d cols)", path.name, len(cacheable.columns))
+            logger.debug(f"Saved cache: {path.name} ({len(cacheable.columns)} cols)")
         except Exception as exc:
-            logger.warning("Cache write failed (%s): %s", path.name, exc)
+            logger.warning(f"Cache write failed ({path.name}): {exc}")
 
     def clear_cache(self) -> None:
         """Delete all cached Parquet files written by this pipeline."""
         if self._cache_dir.exists():
             shutil.rmtree(self._cache_dir)
-            logger.info("Cleared feature cache: %s", self._cache_dir)
+            logger.info(f"Cleared feature cache: {self._cache_dir}")
 
     # ------------------------------------------------------------------
     # Public API
@@ -327,7 +325,7 @@ class FeaturePipeline:
             *self*, for method chaining.
         """
         cfg = self.config.spatial
-        logger.info("Fitting spatial features on %d stations", len(station_df))
+        logger.info(f"Fitting spatial features on {len(station_df)} stations")
 
         # Cache key: hash of the station coordinates used for spatial computation
         coord_cols = [cfg.lat_col, cfg.lon_col, cfg.id_col]
@@ -358,7 +356,7 @@ class FeaturePipeline:
         if self.config.pipeline.cache_enabled:
             self._save_cache(self._spatial_features, cache_key)
 
-        logger.info("Spatial features computed: %s", new_cols)
+        logger.info(f"Spatial features computed: {new_cols}")
         return self
 
     def transform(

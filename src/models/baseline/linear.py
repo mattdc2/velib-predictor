@@ -118,10 +118,7 @@ class _LinearBase(VelibBaseModel):
         self._estimator.fit(X, y)
 
         logger.info(
-            "%s fitted on %d samples, %d features.",
-            type(self).__name__,
-            len(y),
-            len(self._fitted_feature_cols),
+            f"{type(self).__name__} fitted on {len(y)} samples, {len(self._fitted_feature_cols)} features."
         )
         return self
 
@@ -319,9 +316,7 @@ def cross_validate_model(
         y_true = val_df[target_col]
         metrics = compute_metrics(y_true, y_pred)
         fold_metrics.append(metrics)
-        logger.debug(
-            "CV fold %d — MAE: %.3f  RMSE: %.3f", fold + 1, metrics["mae"], metrics["rmse"]
-        )
+        logger.debug(f"CV fold {fold + 1} — MAE: {metrics['mae']:.3f}  RMSE: {metrics['rmse']:.3f}")
 
     maes = [m["mae"] for m in fold_metrics]
     rmses = [m["rmse"] for m in fold_metrics]
@@ -338,12 +333,6 @@ def cross_validate_model(
     }
 
     logger.info(
-        "%s CV (%d folds) — MAE %.3f±%.3f  RMSE %.3f±%.3f",
-        model_class.__name__,
-        n_splits,
-        summary["mean_mae"],
-        summary["std_mae"],
-        summary["mean_rmse"],
-        summary["std_rmse"],
+        f"{model_class.__name__} CV ({n_splits} folds) — MAE {summary['mean_mae']:.3f}±{summary['std_mae']:.3f}  RMSE {summary['mean_rmse']:.3f}±{summary['std_rmse']:.3f}"
     )
     return summary

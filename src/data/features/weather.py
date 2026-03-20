@@ -114,7 +114,7 @@ def add_weather_lags(
         for col in lag_cols:
             out_col = f"{col}_lag_{h}h"
             sorted_result[out_col] = merged[col].values
-            logger.debug("Added weather lag feature: %s", out_col)
+            logger.debug(f"Added weather lag feature: {out_col}")
 
     return sorted_result.sort_index()
 
@@ -155,7 +155,7 @@ def add_is_raining(
         raining = raining | (result[col] > threshold)
 
     result[output_col] = raining.astype(int)
-    logger.debug("Added rain indicator: %s (threshold=%.2f mm/h)", output_col, threshold)
+    logger.debug(f"Added rain indicator: {output_col} (threshold={threshold:.2f} mm/h)")
     return result
 
 
@@ -209,7 +209,7 @@ def add_temp_category(
         labels=_labels,
         ordered=True,
     )
-    logger.debug("Added temperature category: %s", output_col)
+    logger.debug(f"Added temperature category: {output_col}")
     return result
 
 
@@ -279,7 +279,7 @@ def add_comfort_index(
 
     result[output_col] = base_temp - COMFORT_RAIN_COEFF * precip - COMFORT_WIND_COEFF * wind_excess
 
-    logger.debug("Added comfort index: %s", output_col)
+    logger.debug(f"Added comfort index: {output_col}")
     return result
 
 

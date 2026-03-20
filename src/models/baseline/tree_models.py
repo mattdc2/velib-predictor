@@ -107,10 +107,7 @@ class _TreeBase(VelibBaseModel):
         self._estimator.fit(X, y)
 
         logger.info(
-            "%s fitted on %d samples, %d features.",
-            type(self).__name__,
-            len(y),
-            len(self._fitted_feature_cols),
+            f"{type(self).__name__} fitted on {len(y)} samples, {len(self._fitted_feature_cols)} features."
         )
         return self
 
@@ -345,11 +342,7 @@ class PerStationTreeModel(VelibBaseModel):
                 skipped += 1
 
         logger.info(
-            "PerStationTreeModel fitted: %d per-station models, %d used global fallback "
-            "(min_train_samples=%d).",
-            trained,
-            skipped,
-            self.min_train_samples,
+            f"PerStationTreeModel fitted: {trained} per-station models, {skipped} used global fallback (min_train_samples={self.min_train_samples})."
         )
         return self
 
@@ -470,17 +463,14 @@ def tune_hyperparams(
         mean_mae = float(np.nanmean(fold_maes))
         all_results.append({"params": params, "mean_mae": mean_mae, "fold_maes": fold_maes})
 
-        logger.debug("tune_hyperparams: params=%s → mean_mae=%.4f", params, mean_mae)
+        logger.debug(f"tune_hyperparams: params={params} → mean_mae={mean_mae:.4f}")
 
         if mean_mae < best_score:
             best_score = mean_mae
             best_params = params
 
     logger.info(
-        "tune_hyperparams: best=%s (mean_mae=%.4f) over %d combinations.",
-        best_params,
-        best_score,
-        len(combinations),
+        f"tune_hyperparams: best={best_params} (mean_mae={best_score:.4f}) over {len(combinations)} combinations."
     )
     return {"best_params": best_params, "best_score": best_score, "all_results": all_results}
 
@@ -533,9 +523,7 @@ def cross_validate_tree_model(
         model.fit(train_df)
         metrics = compute_metrics(val_df[target_col], model.predict(val_df))
         fold_metrics.append(metrics)
-        logger.debug(
-            "CV fold %d — MAE: %.3f  RMSE: %.3f", fold + 1, metrics["mae"], metrics["rmse"]
-        )
+        logger.debug(f"CV fold {fold + 1} — MAE: {metrics['mae']:.3f}  RMSE: {metrics['rmse']:.3f}")
 
     maes = [m["mae"] for m in fold_metrics]
     rmses = [m["rmse"] for m in fold_metrics]
@@ -552,13 +540,7 @@ def cross_validate_tree_model(
     }
 
     logger.info(
-        "%s CV (%d folds) — MAE %.3f±%.3f  RMSE %.3f±%.3f",
-        model_class.__name__,
-        n_splits,
-        summary["mean_mae"],
-        summary["std_mae"],
-        summary["mean_rmse"],
-        summary["std_rmse"],
+        f"{model_class.__name__} CV ({n_splits} folds) — MAE {summary['mean_mae']:.3f}±{summary['std_mae']:.3f}  RMSE {summary['mean_rmse']:.3f}±{summary['std_rmse']:.3f}"
     )
     return summary
 
@@ -645,10 +627,7 @@ def compare_per_station_vs_global(
     winner = "per_station" if per_station_metrics["mae"] < global_metrics["mae"] else "global"
 
     logger.info(
-        "compare_per_station_vs_global: global MAE=%.3f, per-station MAE=%.3f → %s wins.",
-        global_metrics["mae"],
-        per_station_metrics["mae"],
-        winner,
+        f"compare_per_station_vs_global: global MAE={global_metrics['mae']:.3f}, per-station MAE={per_station_metrics['mae']:.3f} → {winner} wins."
     )
     return {
         "global_metrics": global_metrics,
